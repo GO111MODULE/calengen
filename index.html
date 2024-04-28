@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.25/vue.global.min.js"
+            integrity="sha512-ktu9j+HWLWH4KFN4rMgfK/1DGpIR+RpvDkP+nBpECN7XHsEvy44j+M7hFAUFPOOR/d/YG52Xe+VjOygRIHE1dA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        ></script>
+    </head>
+    <body>
+        <div id="app">
+            <textarea v-model="userInput" placeholder="输入待办事项"></textarea>
+            <button @click="parseAndGenerateICS">generare</button>
+        </div>
+    </body>
+</html>
+<script>
+    const { createApp, ref } = Vue
+
+    createApp({
+        setup() {
+            const message = ref("Hello vue!")
+            const icsgen = function (ev) {
+                var icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\n`
+
+                ev.forEach((e) => {
+                    var startDate = "2024" + e.date + "T190000"
+                    var endDate = "2024" + e.date + "T203000"
+
+                    icsContent += `BEGIN:VEVENT\nDTSTART:${startDate}\nDTEND:${endDate}\nSUMMARY:${e.task}\nEND:VEVENT\n`
+                })
+                icsContent += `END:VCALENDAR`
+
+                var blob = new Blob([icsContent], { type: "text/calendar" })
+
+                var downloadLink = document.createElement("a")
+                downloadLink.href = window.URL.createObjectURL(blob)
+                downloadLink.download = "events.ics"
+
+                document.body.appendChild(downloadLink)
+                downloadLink.click()
+
+                document.body.removeChild(downloadLink)
+            }
+            const parseInput = function (inputText) {
+                const lines = inputText.split("\n")
+                const events = []
+                lines.forEach((line) => {
+                    const [date, tasks] = line.split(",")
+                    const taskList = tasks.split("+")
+
+                    taskList.forEach((task) => {
+                        events.push({
+                            date: date,
+                            task: task,
+                        })
+                    })
+                })
+                console.debug(events)
+                return events
+            }
+
+            let userInput = ref("")
+            const parseAndGenerateICS = function () {
+                // 解析用户输入的文本
+                const events = parseInput(userInput.value)
+                // 生成ICS文件
+                icsgen(events)
+            }
+            return {
+                message,
+                icsgen,
+                userInput,
+                parseAndGenerateICS,
+            }
+        },
+    }).mount("#app")
+</script>
+<script></script>
